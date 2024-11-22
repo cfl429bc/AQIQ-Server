@@ -66,7 +66,7 @@ const char* messages[5] = {" ", " ", " ", " ", " "};
 // Wifi Information
 bool AP = true;
 const char* apssid = "AQIQ";
-const char* appassword = "Chris21bc";
+const char* appassword = "Admin";
 String links[4] = {"/", "/t", "/test", "/stop"};
 #define SERVER_PORT 80
 
