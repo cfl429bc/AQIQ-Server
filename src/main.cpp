@@ -137,7 +137,7 @@ void updateMessages(const char* msg, bool display) {
 void serialDelay(int seconds) {
 	Serial.println("");
 	for (int i = 0; i < seconds; i++) {
-		Serial.println(i + 1);
+		// Serial.println(num[i]);
         updateMessages(num[i], true);
 		delay(1000);
 	}
@@ -283,38 +283,69 @@ void startServer() {
     Serial.println("Server started!");
 }
 
-// Callback for receiving data from mesh
-void receivedCallback(uint32_t from, String &msg) {
-	recent_node = from;
-    JsonDocument doc;
-    deserializeJson(doc, msg);
-	Serial.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
-	Serial.println(msg);
-	Serial.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
-    
-	for (int i = 0; i < 5; i++) {
-		// mapAdd(from, keys[i], doc[keys[i]].as<int>());
-		// dataMap[from][keys[i]] = doc[keys[i]].as<int>();
-		Serial.print(keys[i]);
-        Serial.print(": ");
-        // Serial.print(dataMap[from][keys[i]]);
-        Serial.print(" ");
-        Serial.println(suf[i]);
-	}
+// Periodic task to send a message
+Task taskSendMessage(TASK_SECOND * 10 , TASK_FOREVER, &sendMessage);
 
+String readingsToJSON () {
+    for (int i = 0; i < 5; i++) {
+        jsonReadings[keys[i]] = datum[i];
+    }
+    
+    serializeJson(jsonReadings, readings);
+    return readings;
 }
 
-// Callbacks for mesh network
+void sendMessage () {
+    String msg = readingsToJSON();
+    mesh.sendBroadcast(msg);
+}
+
+// Needed for painless library
+void receivedCallback( uint32_t from, String &msg ) {
+    // Ignore messages from this node itself
+    if (from == mesh.getNodeId()) {
+        return;  // Ignore message
+    }
+
+    Serial.printf("Received from %u msg=%s\n", from, msg.c_str());
+    
+    // JSON input string.
+    const char* json = msg.c_str();
+    // Deserialize the JSON document
+    DeserializationError error = deserializeJson(jsonReadings, json);
+
+    // Test if parsing succeeds.
+    if (error) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(error.f_str());
+        return;
+    }
+
+    Serial.print("Node: ");
+    Serial.println(from);
+    
+    for (int i = 0; i < 5; i++) {    
+        datum[i] = jsonReadings[keys[i]].as<String>();
+        Serial.print(keys[i]);
+        Serial.print(": ");
+        Serial.print(datum[i]);
+        Serial.print(" ");
+        Serial.println(suf[i]);
+    }
+
+    displayMessages();
+}
+
 void newConnectionCallback(uint32_t nodeId) {
-    Serial.printf("\nNew Connection: %u\n", nodeId);
+    Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
 }
 
 void changedConnectionCallback() {
-    Serial.printf("\nMesh Connections Changed.\n");
+    Serial.printf("Changed connections\n");
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
-    Serial.printf("\nAdjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
+    Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
 }
 
 void initializeMesh() {
@@ -328,6 +359,11 @@ void initializeMesh() {
     mesh.onNewConnection(&newConnectionCallback);
     mesh.onChangedConnections(&changedConnectionCallback);
 	mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+}
+
+// Disconnect from mesh
+void disconnectFromMesh() {
+    mesh.stop();
 }
 
 void setup() {
@@ -361,6 +397,7 @@ void loop() {
         handleHTMLRoot();
         handleHTMLRoot2();
     } else if (boardType == "Regular") {
+        mesh.sendBroadcast("hello");
         mesh.update();
     }
     
