@@ -37,8 +37,8 @@ int g_PowerLimit = 3000;
 
 
 // sets variable to switch between Access Point and Sensor board
-// Either "WebServer" or "Mesh"
-String boardType = "Mesh";
+// Either "WebServer", "Mesh", or both
+String boardType = "WebServer";
 
 
 // Time taken after visiting /stop
@@ -69,6 +69,8 @@ std::map<String, String> board2Data = {
 String keys[6] = {"temperature", "humidity", "pressure", "pm1_0", "pm2_5", "pm10"};    // Keys for data
 int datum[6] = {1, 2, 3, 4, 5, 6};    // pm1.0, pm2.5, pm10.0, temp, hum, psi (placeholder values)
 String suf[6] = {"F", "%", "hPa", "ppm", "ppm", "ppm"};    // Suffixes for readings
+JsonDocument jsonReadings;
+String readings;    //String to send to other nodes with sensor readings
 const char* messages[5] = {" ", " ", " ", " ", " "};
 const char * num[100] = {
     "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
@@ -283,11 +285,10 @@ void startServer() {
     Serial.println("Server started!");
 }
 
-// Periodic task to send a message
-Task taskSendMessage(TASK_SECOND * 10 , TASK_FOREVER, &sendMessage);
-
 String readingsToJSON () {
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
+        int randomNum = rand() % 101;
+        datum[i] = randomNum;
         jsonReadings[keys[i]] = datum[i];
     }
     
@@ -296,13 +297,18 @@ String readingsToJSON () {
 }
 
 void sendMessage () {
+    updateMessages("sent", true);
     String msg = readingsToJSON();
     mesh.sendBroadcast(msg);
 }
 
+// Periodic task to send a message
+Task taskSendMessage(TASK_SECOND * 10 , TASK_FOREVER, &sendMessage);
+
 // Needed for painless library
 void receivedCallback( uint32_t from, String &msg ) {
     // Ignore messages from this node itself
+    updateMessages("Recieved", true);
     if (from == mesh.getNodeId()) {
         return;  // Ignore message
     }
@@ -325,15 +331,13 @@ void receivedCallback( uint32_t from, String &msg ) {
     Serial.println(from);
     
     for (int i = 0; i < 5; i++) {    
-        datum[i] = jsonReadings[keys[i]].as<String>();
+        datum[i] = jsonReadings[keys[i]];
         Serial.print(keys[i]);
         Serial.print(": ");
         Serial.print(datum[i]);
         Serial.print(" ");
         Serial.println(suf[i]);
     }
-
-    displayMessages();
 }
 
 void newConnectionCallback(uint32_t nodeId) {
@@ -352,13 +356,20 @@ void initializeMesh() {
     // Mesh network initialization
     mesh.init(MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT);
 	// mesh.setDebugMsgTypes(ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE);  // all types on
-    // mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
+    mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
     
 	// Set the mesh callbacks
 	mesh.onReceive(&receivedCallback);
     mesh.onNewConnection(&newConnectionCallback);
     mesh.onChangedConnections(&changedConnectionCallback);
 	mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+
+}
+
+void startTasks() {
+    // Add the task to send messages periodically
+    userScheduler.addTask(taskSendMessage);
+    taskSendMessage.enable();
 }
 
 // Disconnect from mesh
@@ -388,6 +399,13 @@ void setup() {
         generateLinks();
     } else if (boardType == "Mesh") {
         initializeMesh();
+        startTasks();
+    } else if (boardType == "Both") {
+        connectAP();
+        startServer();
+        generateLinks();
+        initializeMesh();
+        startTasks();
     }
 }
 
@@ -396,10 +414,21 @@ void loop() {
         server.handleClient();
         handleHTMLRoot();
         handleHTMLRoot2();
-    } else if (boardType == "Regular") {
-        mesh.sendBroadcast("hello");
+        delay(5000);
+    } else if (boardType == "Mesh") {
         mesh.update();
+        delay(100);
+    } else if (boardType == "Both") {
+        for (int i = 0; i < 50; i++) {
+            mesh.update();
+            delay(100);
+            if (int i = 49) {
+                server.handleClient();
+                handleHTMLRoot();
+                handleHTMLRoot2();
+            }
+        }
+        
     }
-    
-    delay(5000);
+
 }
