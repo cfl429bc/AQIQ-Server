@@ -48,21 +48,21 @@ int selfDestructTime = 5;
 std::map<String, std::vector<std::pair<String, String>>> sensorData;
 
 std::map<String, String> board1Data = {
-    {"temperature", "72.5 F"},
-    {"humidity", "40 %"},
-    {"pressure", "1013 hPa"},
-    {"pm1_0", "15 ppm"},
-    {"pm2_5", "20 ppm"},
-    {"pm10", "25 ppm"}
+    {"temperature", "0 F"},
+    {"humidity", "1 %"},
+    {"pressure", "2 hPa"},
+    {"pm1_0", "3 ppm"},
+    {"pm2_5", "4 ppm"},
+    {"pm10", "5 ppm"}
 };
 
 std::map<String, String> board2Data = {
-    {"temperature", "68.0 F"},
-    {"humidity", "50 %"},
-    {"pressure", "1010 hPa"},
-    {"pm1_0", "10 ppm"},
-    {"pm2_5", "15 ppm"},
-    {"pm10", "20 ppm"}
+    {"temperature", "6 F"},
+    {"humidity", "7 %"},
+    {"pressure", "8 hPa"},
+    {"pm1_0", "9 ppm"},
+    {"pm2_5", "10 ppm"},
+    {"pm10", "11 ppm"}
 };
 
 // Keys, data, and suffix arrays for sensor values
@@ -286,6 +286,30 @@ void startServer() {
     Serial.println("Server started!");
 }
 
+std::map<String, String> jsonToMap(String &jsonString) {
+    std::map<String, String> result;
+
+    // Create a JSON document (adjust size as needed for your JSON)
+    JsonDocument doc;
+
+    // Parse the JSON string
+    DeserializationError error = deserializeJson(doc, jsonString);
+
+    // Check if parsing was successful
+    if (error) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(error.f_str());
+        return result; // Return an empty map if parsing fails
+    }
+
+    // Iterate through the JSON object and populate the map
+    for (JsonPair kv : doc.as<JsonObject>()) {
+        result[kv.key().c_str()] = kv.value().as<const char*>();
+    }
+
+    return result;
+}
+
 String readingsToJSON () {
     for (int i = 0; i < 6; i++) {
         int randomNum = rand() % 101;
@@ -310,9 +334,9 @@ Task taskSendMessage(TASK_SECOND * 10 , TASK_FOREVER, &sendMessage);
 void receivedCallback( uint32_t from, String &msg ) {
     // Ignore messages from this node itself
     updateMessages("Recieved", true);
-    if (from == mesh.getNodeId()) {
-        return;  // Ignore message
-    }
+    // if (from == mesh.getNodeId()) {
+    //     return;  // Ignore message
+    // }
 
     Serial.printf("Received from %u msg=%s\n", from, msg.c_str());
     
@@ -338,6 +362,13 @@ void receivedCallback( uint32_t from, String &msg ) {
         Serial.print(datum[i]);
         Serial.print(" ");
         Serial.println(suf[i]);
+    }
+
+    updateSensorData(String(from), jsonToMap(msg));
+
+    if (boardType == "Both") {
+        handleHTMLRoot();
+        handleHTMLRoot2();
     }
 }
 
@@ -365,6 +396,11 @@ void initializeMesh() {
     mesh.onChangedConnections(&changedConnectionCallback);
 	mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 
+    Serial.println(mesh.getNodeId());
+    String jsonReadings = readingsToJSON();
+    receivedCallback(mesh.getNodeId(), jsonReadings);
+    // updateMessages(mesh.getNodeId().c_str(), true);
+
 }
 
 void startTasks() {
@@ -389,8 +425,8 @@ void setup() {
 
     serialDelay(5);
 
-    updateSensorData("Board 1", board1Data);
-    updateSensorData("Board 2", board2Data);
+    updateSensorData("1129945228", board1Data);
+    updateSensorData("1129948912", board2Data);
     updateSensorData("Board 3", board1Data);
     updateSensorData("Board 4", board2Data);
 
@@ -424,10 +460,8 @@ void loop() {
         for (int i = 0; i < 50; i++) {
             mesh.update();
             delay(100);
-            if (int i = 49) {
+            if (i == 49) {
                 server.handleClient();
-                handleHTMLRoot();
-                handleHTMLRoot2();
             }
         }
         
