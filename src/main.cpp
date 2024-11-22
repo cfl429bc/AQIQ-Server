@@ -9,9 +9,38 @@
 
 // Files & Inclusions
 #include <WebPage.h>
-extern const char* webpage;
 #include <WebPage2.h>
+extern const char* webpage;
 extern const char* webpage2;
+
+// Constants for OLED and LEDs
+#define OLED_CLOCK      18
+#define OLED_DATA       17
+#define OLED_RESET      21
+#define LED_PIN         7
+#define NUM_LEDS        14
+#define LED_TYPE        WS2812B
+#define COLOR_ORDER     GRB
+#define LED_BRIGHTNESS  255
+#define MAX_POWER       900
+
+// LED configuration
+CRGB LEDs[NUM_LEDS] = {0};
+
+// OLED configuration
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C g_OLED(U8G2_R2, OLED_RESET, OLED_CLOCK, OLED_DATA);
+int g_lineHeight = 0;
+int g_Brightness = 255;
+int g_PowerLimit = 3000;
+
+
+// sets variable to switch between Access Point and Sensor board
+// Either "WebServer" or "Regular"
+String boardType = "WebServer";
+
+
+// Time taken after visiting /stop
+int selfDestructTime = 5;
 
 // Simulated sensor data for demonstration
 std::map<String, std::vector<std::pair<String, String>>> sensorData;
@@ -34,29 +63,6 @@ std::map<String, String> board2Data = {
     {"pm10", "20 ppm"}
 };
 
-// Constants for OLED and LEDs
-#define OLED_CLOCK      18
-#define OLED_DATA       17
-#define OLED_RESET      21
-#define LED_PIN         7
-#define NUM_LEDS        14
-#define LED_TYPE        WS2812B
-#define COLOR_ORDER     GRB
-#define LED_BRIGHTNESS  255
-#define MAX_POWER       900
-
-// LED configuration
-CRGB LEDs[NUM_LEDS] = {0};
-
-// OLED configuration
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C g_OLED(U8G2_R2, OLED_RESET, OLED_CLOCK, OLED_DATA);
-int g_lineHeight = 0;
-int g_Brightness = 255;
-int g_PowerLimit = 3000;
-
-// Time taken after visiting /stop
-int selfDestructTime = 5;
-
 // Keys, data, and suffix arrays for sensor values
 String keys[6] = {"temperature", "humidity", "pressure", "pm1_0", "pm2_5", "pm10"};    // Keys for data
 int datum[6] = {1, 2, 3, 4, 5, 6};    // pm1.0, pm2.5, pm10.0, temp, hum, psi (placeholder values)
@@ -66,12 +72,14 @@ const char* messages[5] = {" ", " ", " ", " ", " "};
 // Wifi Information
 bool AP = true;
 const char* apssid = "AQIQ";
-const char* appassword = "Admin";
-String links[4] = {"/", "/t", "/test", "/stop"};
-#define SERVER_PORT 80
+const char* appassword = "Admin12345";
+String links[4] = {"/", "/test", "/test2", "/stop"};
 
+// Creates server on the declared port
+#define SERVER_PORT 80
 WebServer server(SERVER_PORT);
 
+//display the messages on the board
 void displayMessages() {
     g_OLED.clearBuffer();  // Clear the screen
     for (int i = 0; i < 5; i++) {
@@ -83,6 +91,7 @@ void displayMessages() {
     g_OLED.sendBuffer();  // Send the updated buffer to the OLED
 }
 
+// updates the "messages" list
 void updateMessages(const char* msg, bool display) {
     for (int i = 4; i > 0; i--) {
         messages[i] = messages[i - 1];
@@ -93,6 +102,7 @@ void updateMessages(const char* msg, bool display) {
     }
 }
 
+// Sets up the screen on the board
 void initializeOLED() {
     g_OLED.begin();
     g_OLED.clear();
@@ -101,6 +111,7 @@ void initializeOLED() {
     updateMessages("g_OLED Start", true);
 }
 
+// Sets up the board for LED usage
 void initializeFastLED() {
     FastLED.addLeds<LED_TYPE, LED_PIN, GRB>(LEDs, NUM_LEDS);
     FastLED.setBrightness(g_Brightness);
@@ -108,6 +119,7 @@ void initializeFastLED() {
     updateMessages("FastLED Start", true);
 }
 
+// Updates the map with the sensor data
 void updateSensorData(String boardName, std::map<String, String> data) {
     std::vector<std::pair<String, String>> dataVector;
     for (auto& entry : data) {
@@ -116,6 +128,7 @@ void updateSensorData(String boardName, std::map<String, String> data) {
     sensorData[boardName] = dataVector;
 }
 
+// Function to take HTML and replace teh data
 String readHTMLFile(const char* page) {
     String html = String(page);
 
@@ -152,16 +165,19 @@ String readHTMLFile(const char* page) {
     return html;
 }
 
+// Handles home page
 void handleBasePage() {
     String htmlContent = String(R"rawliteral(<html><body><h1>ESP32 Server is Running!</h1><p><a href="/"><span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">Home Page</span></a><a href="/test"><span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">Test Page</span></a><a href="/test2"><span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">Test Page 2</span></a><a href="/stop"><span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">Stop Server</span></a></p></body></html>)rawliteral");
     server.send(200, "text/html", htmlContent);
 }
 
+//Handles page 1
 void handleHTMLRoot() {
     String htmlContent = readHTMLFile(webpage);
     server.send(200, "text/html", htmlContent);
 }
 
+// Handles page 2
 void handleHTMLRoot2() {
     String htmlContent = readHTMLFile(webpage2);
     server.send(200, "text/html", htmlContent);
@@ -186,6 +202,7 @@ void stopWebServer() {
     updateMessages("Web server stopped.", true);
 }
 
+// Web page for stoping the server
 void handleStop() {
     String html = "<html><head><script>function autoRefresh() {window.location = window.location.href;} setInterval('autoRefresh()', ";
     html += String(selfDestructTime);
@@ -194,6 +211,7 @@ void handleStop() {
     stopWebServer();  // Stop the server
 }
 
+// Creates an access point (Wifi Network) with the credentials defined at teh top
 void connectAP () {
     WiFi.mode(WIFI_AP);
     if (WiFi.softAP(apssid, appassword)) {
@@ -207,6 +225,7 @@ void connectAP () {
     }
 }
 
+// Starts a server on the AP
 void startServer() {
     server.on("/", handleBasePage); // Handle test page
     server.on("/test", handleHTMLRoot); // Handle webpage
@@ -238,14 +257,23 @@ void setup() {
     updateSensorData("Board 3", board1Data);
     updateSensorData("Board 4", board2Data);
 
-    connectAP();
-    startServer();
-    generateLinks();
+    if (boardType == "WebServer") {
+        connectAP();
+        startServer();
+        generateLinks();
+    } else if (boardType == "Regular") {
+        // code for data collection
+    }
 }
 
 void loop() {
-    server.handleClient();
-    datum[0] += 2.0;
-    handleHTMLRoot();
+    if (boardType == "WebServer") {
+        server.handleClient();
+        handleHTMLRoot();
+        handleHTMLRoot2();
+    } else if (boardType == "Regular") {
+        // code for data collection
+    }
+    
     delay(5000);
 }
