@@ -37,8 +37,8 @@ int g_PowerLimit = 3000;
 
 
 // sets variable to switch between Access Point and Sensor board
-// Either "WebServer", "Mesh", or both
-String boardType = "WebServer";
+// Either "WebServer", "Mesh", or "Both"
+String boardType = "Both";
 
 
 // Time taken after visiting /stop
@@ -98,6 +98,7 @@ float pm10 = 0.0;
 #define MESH_PREFIX "esp32_mesh"
 #define MESH_PASSWORD "mesh_password"
 #define MESH_PORT 5555
+#define connectMode = WIFI_STA   // Switch between WIFI_AP, WIFI_STA and WIFI_AP_STA (default) mode
 uint32_t recent_node = 12345678;
 
 // Wifi Information
@@ -401,11 +402,12 @@ void setup() {
         initializeMesh();
         startTasks();
     } else if (boardType == "Both") {
+        initializeMesh();
+        // startTasks();
+        
         connectAP();
         startServer();
         generateLinks();
-        initializeMesh();
-        startTasks();
     }
 }
 
