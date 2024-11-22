@@ -4,6 +4,8 @@
 #include <WebServer.h>
 #include <U8g2lib.h>
 #include <FastLED.h>
+#include <painlessMesh.h>
+#include <TaskScheduler.h>
 #include <map>
 #include <vector>
 
@@ -35,7 +37,7 @@ int g_PowerLimit = 3000;
 
 
 // sets variable to switch between Access Point and Sensor board
-// Either "WebServer" or "Regular"
+// Either "WebServer" or "Mesh"
 String boardType = "WebServer";
 
 
@@ -69,6 +71,21 @@ int datum[6] = {1, 2, 3, 4, 5, 6};    // pm1.0, pm2.5, pm10.0, temp, hum, psi (p
 String suf[6] = {"F", "%", "hPa", "ppm", "ppm", "ppm"};    // Suffixes for readings
 const char* messages[5] = {" ", " ", " ", " ", " "};
 
+// Sensor data variable 
+// Kinda redundent rn I am just using it for tests
+float temperature = 0.0;
+float humidity = 0.0;
+float pressure = 0.0;
+float pm1_0 = 0.0;
+float pm2_5 = 0.0;
+float pm10 = 0.0;
+
+// Mesh network settings
+#define MESH_PREFIX "esp32_mesh"
+#define MESH_PASSWORD "mesh_password"
+#define MESH_PORT 5555
+uint32_t recent_node = 12345678;
+
 // Wifi Information
 bool AP = true;
 const char* apssid = "AQIQ";
@@ -78,6 +95,9 @@ String links[4] = {"/", "/test", "/test2", "/stop"};
 // Creates server on the declared port
 #define SERVER_PORT 80
 WebServer server(SERVER_PORT);
+
+Scheduler userScheduler;  // Task scheduler for painlessMesh
+painlessMesh mesh;	// Mesh network instance
 
 //display the messages on the board
 void displayMessages() {
@@ -100,6 +120,16 @@ void updateMessages(const char* msg, bool display) {
 	if (display) {
         displayMessages();
     }
+}
+
+void serialDelay(int seconds) {
+	Serial.println("");
+	for (int i = 0; i < seconds; i++) {
+		Serial.println(i + 1);
+        updateMessages(num[i]);
+        displayMessages();
+		delay(1000);
+	}
 }
 
 // Sets up the screen on the board
@@ -192,12 +222,12 @@ void generateLinks() {
     updateMessages(("http://" + ip + ":" + String(SERVER_PORT) + "/").c_str(), true);
 }
 
-// Function to stop the web server
+// Function to actually stop the web server
 void stopWebServer() {
     server.stop();  // Stop the server
     Serial.println("\nWeb server stoping.");
     updateMessages("Web server stoping.", true);
-    delay(5000);
+    serialDelay(5);
     Serial.println("\nWeb server stopped.");
     updateMessages("Web server stopped.", true);
 }
@@ -242,6 +272,53 @@ void startServer() {
     Serial.println("Server started!");
 }
 
+// Callback for receiving data from mesh
+void receivedCallback(uint32_t from, String &msg) {
+	recent_node = from;
+    JsonDocument doc;
+    deserializeJson(doc, msg);
+	Serial.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
+	Serial.println(msg);
+	Serial.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
+    
+	for (int i = 0; i < 5; i++) {
+		mapAdd(from, keys[i], doc[keys[i]].as<int>());
+		// dataMap[from][keys[i]] = doc[keys[i]].as<int>();
+		Serial.print(keys[i]);
+        Serial.print(": ");
+        Serial.print(dataMap[from][keys[i]]);
+        Serial.print(" ");
+        Serial.println(suf[i]);
+	}
+
+}
+
+// Callbacks for mesh network
+void newConnectionCallback(uint32_t nodeId) {
+    Serial.printf("\nNew Connection: %u\n", nodeId);
+}
+
+void changedConnectionCallback() {
+    Serial.printf("\nMesh Connections Changed.\n");
+}
+
+void nodeTimeAdjustedCallback(int32_t offset) {
+    Serial.printf("\nAdjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
+}
+
+void initializeMesh() {
+    // Mesh network initialization
+    mesh.init(MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT);
+	// mesh.setDebugMsgTypes(ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE);  // all types on
+    // mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
+    
+	// Set the mesh callbacks
+	mesh.onReceive(&receivedCallback);
+    mesh.onNewConnection(&newConnectionCallback);
+    mesh.onChangedConnections(&changedConnectionCallback);
+	mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+}
+
 void setup() {
     delay(2500);
     Serial.begin(115200);
@@ -251,6 +328,7 @@ void setup() {
     initializeOLED();
     initializeFastLED();
 
+    serialDelay(5);
 
     updateSensorData("Board 1", board1Data);
     updateSensorData("Board 2", board2Data);
@@ -261,8 +339,8 @@ void setup() {
         connectAP();
         startServer();
         generateLinks();
-    } else if (boardType == "Regular") {
-        // code for data collection
+    } else if (boardType == "Mesh") {
+        initializeMesh();
     }
 }
 
@@ -272,7 +350,7 @@ void loop() {
         handleHTMLRoot();
         handleHTMLRoot2();
     } else if (boardType == "Regular") {
-        // code for data collection
+        mesh.update();
     }
     
     delay(5000);
