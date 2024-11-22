@@ -1,5 +1,6 @@
 // Libraries
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <U8g2lib.h>
@@ -196,11 +197,12 @@ String readHTMLFile(const char* page) {
     for (auto& board : sensorData) {
         String boardNamePlaceholder = "{" + board.first + "}";  // e.g., "{Board 1}"
         html.replace(boardNamePlaceholder, board.first);        // Replace with the actual board name
-        int i = 0;
+        // int i = 0;
         for (auto& sensor : board.second) {
-            i += 1;
             String sensorPlaceholder = "{" + board.first + " " + sensor.first + "}";  // e.g., "{Board 1 temperature}"
-            html.replace(sensorPlaceholder, sensor.second);                           // Replace with the sensor value
+            String replaceUnit = sensor.second;
+            // i += 1;
+            html.replace(sensorPlaceholder, replaceUnit);                           // Replace with the sensor value
         }
     }
 
@@ -286,35 +288,42 @@ void startServer() {
     Serial.println("Server started!");
 }
 
-std::map<String, String> jsonToMap(String &jsonString) {
-    std::map<String, String> result;
+std::map<String, String> jsonToMap(String jsonString) {
+    std::map<String, String> dataMap;
 
-    // Create a JSON document (adjust size as needed for your JSON)
+    
+    // // Your JSON string
+    // String jsonString = String(R"rawliteral( {"temperature":65,"humidity":25,"pressure":73,"pm1_0":10,"pm2_5":69,"pm10":22} )rawliteral");
+    
+    // Create a JSON document to parse the string
     JsonDocument doc;
-
-    // Parse the JSON string
+    
+    // Deserialize the JSON string
     DeserializationError error = deserializeJson(doc, jsonString);
-
-    // Check if parsing was successful
+    
+    // Check for errors in deserialization
     if (error) {
         Serial.print(F("deserializeJson() failed: "));
         Serial.println(error.f_str());
-        return result; // Return an empty map if parsing fails
+        return dataMap;
     }
-
-    // Iterate through the JSON object and populate the map
+    
+    // Loop through the keys and values, and store them in the map
     for (JsonPair kv : doc.as<JsonObject>()) {
-        result[kv.key().c_str()] = kv.value().as<const char*>();
+        String key = kv.key().c_str();
+        String value = String(kv.value().as<int>());
+        dataMap[key] = value;
     }
 
-    return result;
+    return dataMap;
 }
 
 String readingsToJSON () {
     for (int i = 0; i < 6; i++) {
         int randomNum = rand() % 101;
+        Serial.println(randomNum);
         datum[i] = randomNum;
-        jsonReadings[keys[i]] = datum[i];
+        jsonReadings[keys[i]] = String(datum[i]);   // + " " + suf[i]
     }
     
     serializeJson(jsonReadings, readings);
@@ -355,7 +364,7 @@ void receivedCallback( uint32_t from, String &msg ) {
     Serial.print("Node: ");
     Serial.println(from);
     
-    for (int i = 0; i < 5; i++) {    
+    for (int i = 0; i < 6; i++) {    
         datum[i] = jsonReadings[keys[i]];
         Serial.print(keys[i]);
         Serial.print(": ");
@@ -364,7 +373,8 @@ void receivedCallback( uint32_t from, String &msg ) {
         Serial.println(suf[i]);
     }
 
-    updateSensorData(String(from), jsonToMap(msg));
+    std::map<String, String> mini_map = jsonToMap(msg);
+    updateSensorData(String(from), mini_map);
 
     if (boardType == "Both") {
         handleHTMLRoot();
