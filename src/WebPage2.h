@@ -64,7 +64,7 @@ setInterval('autoRefresh()', 20000);
 <h2 style="color: #2e6c80;">Boards:</h2>
 <div class="boards-container">
     <div class="board">
-        <h2>1129945228</h2>
+        <h2>{1129945228}</h2>
         <ol>
             <li>Temperature: {1129945228 temperature}</li>
             <li>Humidity: {1129945228 humidity}</li>
@@ -75,7 +75,7 @@ setInterval('autoRefresh()', 20000);
         </ol>
     </div>
     <div class="board">
-        <h2>1129948912</h2>
+        <h2>{1129948912}</h2>
         <ol>
             <li>Temperature: {1129948912 temperature}</li>
             <li>Humidity: {1129948912 humidity}</li>
@@ -86,25 +86,25 @@ setInterval('autoRefresh()', 20000);
         </ol>
     </div>
     <div class="board">
-        <h2>Board 3</h2>
+        <h2>Board 1</h2>
         <ol>
-            <li>Temperature: {Board 3 temperature}</li>
-            <li>Humidity: {Board 3 humidity}</li>
-            <li>Pressure: {Board 3 pressure}</li>
-            <li>PM 1.0: {Board 3 pm1_0}</li>
-            <li>PM 2.5: {Board 3 pm2_5}</li>
-            <li>PM 10.0: {Board 3 pm10}</li>
+            <li>Temperature: {Board 1 temperature}</li>
+            <li>Humidity: {Board 1 humidity}</li>
+            <li>Pressure: {Board 1 pressure}</li>
+            <li>PM 1.0: {Board 1 pm1_0}</li>
+            <li>PM 2.5: {Board 1 pm2_5}</li>
+            <li>PM 10.0: {Board 1 pm10}</li>
         </ol>
     </div>
     <div class="board">
         <h2>Board 4</h2>
         <ol>
-            <li>Temperature: {Board 4 temperature}</li>
-            <li>Humidity: {Board 4 humidity}</li>
-            <li>Pressure: {Board 4 pressure}</li>
-            <li>PM 1.0: {Board 4 pm1_0}</li>
-            <li>PM 2.5: {Board 4 pm2_5}</li>
-            <li>PM 10.0: {Board 4 pm10}</li>
+            <li>Temperature: {Board 2 temperature}</li>
+            <li>Humidity: {Board 2 humidity}</li>
+            <li>Pressure: {Board 2 pressure}</li>
+            <li>PM 1.0: {Board 2 pm1_0}</li>
+            <li>PM 2.5: {Board 2 pm2_5}</li>
+            <li>PM 10.0: {Board 2 pm10}</li>
         </ol>
     </div>
 </div>

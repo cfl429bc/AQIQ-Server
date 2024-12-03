@@ -94,6 +94,7 @@ float pressure = 0.0;
 float pm1_0 = 0.0;
 float pm2_5 = 0.0;
 float pm10 = 0.0;
+int counter = 0;
 
 // Mesh network settings
 #define MESH_PREFIX "esp32_mesh"
@@ -437,8 +438,8 @@ void setup() {
 
     updateSensorData("1129945228", board1Data);
     updateSensorData("1129948912", board2Data);
-    updateSensorData("Board 3", board1Data);
-    updateSensorData("Board 4", board2Data);
+    updateSensorData("Board 1", board1Data);
+    updateSensorData("Board 2", board2Data);
 
     if (boardType == "WebServer") {
         connectAP();
@@ -448,6 +449,7 @@ void setup() {
         initializeMesh();
         startTasks();
     } else if (boardType == "Both") {
+        counter = 0;
         initializeMesh();
         // startTasks();
         
@@ -467,13 +469,20 @@ void loop() {
         mesh.update();
         delay(100);
     } else if (boardType == "Both") {
-        for (int i = 0; i < 50; i++) {
-            mesh.update();
-            delay(100);
-            if (i == 49) {
-                server.handleClient();
-            }
+        mesh.update();
+        delay(100);
+        counter += 1;
+        if (counter == 50) {
+            counter = 0;
+            server.handleClient();
         }
+        // for (int i = 0; i < 50; i++) {
+        //     mesh.update();
+        //     delay(100);
+        //     if (i == 49) {
+        //         server.handleClient();
+        //     }
+        // }
         
     }
 
