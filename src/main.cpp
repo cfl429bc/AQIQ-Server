@@ -116,7 +116,7 @@ WebServer server(SERVER_PORT);
 Scheduler userScheduler;  // Task scheduler for painlessMesh
 painlessMesh mesh;	// Mesh network instance
 
-//display the messages on the board
+// Display the messages on the board
 void displayMessages() {
     g_OLED.clearBuffer();  // Clear the screen
     for (int i = 0; i < 5; i++) {
@@ -128,7 +128,7 @@ void displayMessages() {
     g_OLED.sendBuffer();  // Send the updated buffer to the OLED
 }
 
-// updates the "messages" list
+// Updates the "messages" list
 void updateMessages(const char* msg, bool display) {
     for (int i = 4; i > 0; i--) {
         messages[i] = messages[i - 1];
@@ -142,7 +142,6 @@ void updateMessages(const char* msg, bool display) {
 void serialDelay(int seconds) {
 	Serial.println("");
 	for (int i = 0; i < seconds; i++) {
-		// Serial.println(num[i]);
         updateMessages(num[i], true);
 		delay(1000);
 	}
@@ -230,7 +229,7 @@ void handleHTMLRoot2() {
     server.send(200, "text/html", htmlContent);
 }
 
-//generate the links to the website
+// Generate the links to the website
 void generateLinks() {
     String ip = AP ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
     for (int i = 0; i < (sizeof(links) / sizeof(links[0])); i++) {
@@ -244,7 +243,7 @@ void stopWebServer() {
     server.stop();  // Stop the server
     Serial.println("\nWeb server stoping.");
     updateMessages("Web server stoping.", true);
-    serialDelay(5);
+    serialDelay(selfDestructTime);
     Serial.println("\nWeb server stopped.");
     updateMessages("Web server stopped.", true);
 }
@@ -407,10 +406,9 @@ void initializeMesh() {
     mesh.onChangedConnections(&changedConnectionCallback);
 	mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 
-    Serial.println(mesh.getNodeId());
-    String jsonReadings = readingsToJSON();
-    receivedCallback(mesh.getNodeId(), jsonReadings);
-    // updateMessages(mesh.getNodeId().c_str(), true);
+    // Serial.println(mesh.getNodeId());
+    // String jsonReadings = readingsToJSON();
+    // receivedCallback(mesh.getNodeId(), jsonReadings);
 
 }
 
@@ -462,8 +460,8 @@ void setup() {
 void loop() {
     if (boardType == "WebServer") {
         server.handleClient();
-        handleHTMLRoot();
-        handleHTMLRoot2();
+        // handleHTMLRoot();
+        // handleHTMLRoot2();
         delay(5000);
     } else if (boardType == "Mesh") {
         mesh.update();
