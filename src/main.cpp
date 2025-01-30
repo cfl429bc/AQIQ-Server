@@ -40,6 +40,7 @@ int g_PowerLimit = 3000;
 // sets variable to switch between Access Point and Sensor board
 // Either "WebServer", "Mesh", or "Both"
 String boardType = "Both";
+// String boardType = "Mesh";
 
 
 // Time taken after visiting /stop
@@ -49,21 +50,21 @@ int selfDestructTime = 5;
 std::map<String, std::vector<std::pair<String, String>>> sensorData;
 
 std::map<String, String> board1Data = {
-    {"temperature", "0 F"},
-    {"humidity", "1 %"},
-    {"pressure", "2 hPa"},
-    {"pm1_0", "3 ppm"},
-    {"pm2_5", "4 ppm"},
-    {"pm10", "5 ppm"}
+    {"temperature", "0"},
+    {"humidity", "1"},
+    {"pressure", "2"},
+    {"pm1_0", "3"},
+    {"pm2_5", "4"},
+    {"pm10", "5"}
 };
 
 std::map<String, String> board2Data = {
-    {"temperature", "6 F"},
-    {"humidity", "7 %"},
-    {"pressure", "8 hPa"},
-    {"pm1_0", "9 ppm"},
-    {"pm2_5", "10 ppm"},
-    {"pm10", "11 ppm"}
+    {"temperature", "6"},
+    {"humidity", "7"},
+    {"pressure", "8"},
+    {"pm1_0", "9"},
+    {"pm2_5", "10"},
+    {"pm10", "11"}
 };
 
 // Keys, data, and suffix arrays for sensor values
@@ -175,7 +176,8 @@ void updateSensorData(String boardName, std::map<String, String> data) {
 
 // Function to take HTML and replace teh data
 String readHTMLFile(const char* page) {
-    String html = String(page);
+    const char* oof = page;
+    String html = String(oof);
 
     // Serial.println("Checking sensorData contents...");
     // if (sensorData.empty()) {
@@ -374,11 +376,12 @@ void receivedCallback( uint32_t from, String &msg ) {
     }
 
     std::map<String, String> mini_map = jsonToMap(msg);
+    Serial.println("From: " + String(from));
     updateSensorData(String(from), mini_map);
 
     if (boardType == "Both") {
-        handleHTMLRoot();
-        handleHTMLRoot2();
+        handleHTMLRoot;
+        handleHTMLRoot2;
     }
 }
 
@@ -434,10 +437,10 @@ void setup() {
 
     serialDelay(5);
 
-    updateSensorData("1129945228", board1Data);
-    updateSensorData("1129948912", board2Data);
-    updateSensorData("Board 1", board1Data);
-    updateSensorData("Board 2", board2Data);
+    updateSensorData(String("1129945228"), board1Data);
+    updateSensorData(String("1129948912"), board2Data);
+    updateSensorData(String("Board 1"), board1Data);
+    updateSensorData(String("Board 2"), board2Data);
 
     if (boardType == "WebServer") {
         connectAP();

@@ -66,45 +66,56 @@ setInterval('autoRefresh()', 20000);
     <div class="board">
         <h2>{1129945228}</h2>
         <ol>
-            <li>Temperature: {1129945228 temperature}</li>
-            <li>Humidity: {1129945228 humidity}</li>
-            <li>Pressure: {1129945228 pressure}</li>
-            <li>PM 1.0: {1129945228 pm1_0}</li>
-            <li>PM 2.5: {1129945228 pm2_5}</li>
-            <li>PM 10.0: {1129945228 pm10}</li>
+            <li>Temperature: {1129945228 temperature} F</li>
+            <li>Humidity: {1129945228 humidity} %</li>
+            <li>Pressure: {1129945228 pressure} hPa</li>
+            <li>PM 1.0: {1129945228 pm1_0} ppm</li>
+            <li>PM 2.5: {1129945228 pm2_5} ppm</li>
+            <li>PM 10.0: {1129945228 pm10} ppm</li>
         </ol>
     </div>
     <div class="board">
         <h2>{1129948912}</h2>
         <ol>
-            <li>Temperature: {1129948912 temperature}</li>
-            <li>Humidity: {1129948912 humidity}</li>
-            <li>Pressure: {1129948912 pressure}</li>
-            <li>PM 1.0: {1129948912 pm1_0}</li>
-            <li>PM 2.5: {1129948912 pm2_5}</li>
-            <li>PM 10.0: {1129948912 pm10}</li>
+            <li>Temperature: {1129948912 temperature} F</li>
+            <li>Humidity: {1129948912 humidity} %</li>
+            <li>Pressure: {1129948912 pressure} hPa</li>
+            <li>PM 1.0: {1129948912 pm1_0} ppm</li>
+            <li>PM 2.5: {1129948912 pm2_5} ppm</li>
+            <li>PM 10.0: {1129948912 pm10} ppm</li>
+        </ol>
+    </div>
+    <div class="board">
+        <h2>{1129945656}</h2>
+        <ol>
+            <li>Temperature: {1129945656 temperature} F</li>
+            <li>Humidity: {1129945656 humidity} %</li>
+            <li>Pressure: {1129945656 pressure} hPa</li>
+            <li>PM 1.0: {1129945656 pm1_0} ppm</li>
+            <li>PM 2.5: {1129945656 pm2_5} ppm</li>
+            <li>PM 10.0: {1129945656 pm10} ppm</li>
         </ol>
     </div>
     <div class="board">
         <h2>Board 1</h2>
         <ol>
-            <li>Temperature: {Board 1 temperature}</li>
-            <li>Humidity: {Board 1 humidity}</li>
-            <li>Pressure: {Board 1 pressure}</li>
-            <li>PM 1.0: {Board 1 pm1_0}</li>
-            <li>PM 2.5: {Board 1 pm2_5}</li>
-            <li>PM 10.0: {Board 1 pm10}</li>
+            <li>Temperature: {Board 1 temperature} F</li>
+            <li>Humidity: {Board 1 humidity} %</li>
+            <li>Pressure: {Board 1 pressure} hPa</li>
+            <li>PM 1.0: {Board 1 pm1_0} ppm</li>
+            <li>PM 2.5: {Board 1 pm2_5} ppm</li>
+            <li>PM 10.0: {Board 1 pm10} ppm</li>
         </ol>
     </div>
     <div class="board">
         <h2>Board 4</h2>
         <ol>
-            <li>Temperature: {Board 2 temperature}</li>
-            <li>Humidity: {Board 2 humidity}</li>
-            <li>Pressure: {Board 2 pressure}</li>
-            <li>PM 1.0: {Board 2 pm1_0}</li>
-            <li>PM 2.5: {Board 2 pm2_5}</li>
-            <li>PM 10.0: {Board 2 pm10}</li>
+            <li>Temperature: {Board 2 temperature} F</li>
+            <li>Humidity: {Board 2 humidity} 5</li>
+            <li>Pressure: {Board 2 pressure} hPa</li>
+            <li>PM 1.0: {Board 2 pm1_0} ppm</li>
+            <li>PM 2.5: {Board 2 pm2_5} ppm</li>
+            <li>PM 10.0: {Board 2 pm10} ppm</li>
         </ol>
     </div>
 </div>

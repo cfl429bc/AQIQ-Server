@@ -13,22 +13,22 @@ const char* webpage = R"rawliteral(
 <p>{Paragraph space}</p>
 <h2 style="color: #2e6c80;">{Board 1}:</h2>
 <ol style="list-style: none; font-size: 14px; line-height: 32px; font-weight: bold;">
-<li style="clear: both;">Temperature: {Board 1 temperature}</li>
-<li style="clear: both;">Humidity = {Board 1 humidity}</li>
-<li style="clear: both;">Pressure = {Board 1 pressure}</li>
-<li style="clear: both;">PM 1.0 = {Board 1 pm1_0}</li>
-<li style="clear: both;">PM 2.5 = {Board 1 pm2_5}</li>
-<li style="clear: both;">PM 10.0 = {Board 1 pm10}</li>
+<li style="clear: both;">Temperature = {Board 1 temperature} F</li>
+<li style="clear: both;">Humidity = {Board 1 humidity} %</li>
+<li style="clear: both;">Pressure = {Board 1 pressure} hPa</li>
+<li style="clear: both;">PM 1.0 = {Board 1 pm1_0} ppm</li>
+<li style="clear: both;">PM 2.5 = {Board 1 pm2_5} ppm</li>
+<li style="clear: both;">PM 10.0 = {Board 1 pm10} ppm</li>
 </ol>
 <p>&nbsp;</p>
 <h2 style="color: #2e6c80;">{Board 2}:</h2>
 <ol style="list-style: none; font-size: 14px; line-height: 32px; font-weight: bold;">
-<li style="clear: both;">Temperature: {Board 2 temperature}</li>
-<li style="clear: both;">Humidity = {Board 2 humidity}</li>
-<li style="clear: both;">Pressure = {Board 2 pressure}</li>
-<li style="clear: both;">PM 1.0 = {Board 2 pm1_0}</li>
-<li style="clear: both;">PM 2.5 = {Board 2 pm2_5}</li>
-<li style="clear: both;">PM 10.0 = {Board 2 pm10}</li>
+<li style="clear: both;">Temperature = {Board 2 temperature} F</li>
+<li style="clear: both;">Humidity = {Board 2 humidity} %</li>
+<li style="clear: both;">Pressure = {Board 2 pressure} hPa</li>
+<li style="clear: both;">PM 1.0 = {Board 2 pm1_0} ppm</li>
+<li style="clear: both;">PM 2.5 = {Board 2 pm2_5} ppm</li>
+<li style="clear: both;">PM 10.0 = {Board 2 pm10} ppm</li>
 </ol>
 <p>&nbsp;</p>
 <h2 style="color: #2e6c80;">Chart View:</h2>
