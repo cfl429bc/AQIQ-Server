@@ -13,7 +13,10 @@
 // Files & Inclusions
 #include <WebPage.h>
 #include <WebPage2.h>
-extern const char* webpage;
+extern const char* webpageBegining;
+extern const char* webpageMiddle;
+extern const char* webpageEnd;
+const char* webpage;
 extern const char* webpage2;
 
 // Constants for OLED and LEDs
@@ -49,7 +52,7 @@ int selfDestructTime = 5;
 // Simulated sensor data for demonstration
 std::map<String, std::vector<std::pair<String, String>>> sensorData;
 std::map<String, uint32_t> boardMapping; // Stores mappings of "Board #" to Node ID
-
+unsigned int globalBoardCounter = 0;
 
 std::map<String, String> board1Data = {
     {"temperature", "0"},
@@ -167,24 +170,31 @@ void initializeFastLED() {
     updateMessages("FastLED Start", true);
 }
 
-String assignBoardNumber(uint32_t nodeId) {
-    int boardNum = boardMapping.size() + 1;
-    String boardName = "Board " + String(boardNum);
+String getBoardName(uint32_t nodeId) {
+    // Check if this node already exists in boardMapping:
+    for (auto const &entry : boardMapping) {
+        if (entry.second == nodeId) {
+            return entry.first; // Return existing board name
+        }
+    }
+    // Otherwise, assign a new board number:
+    globalBoardCounter++;
+    String boardName = "Board " + String(globalBoardCounter);
     boardMapping[boardName] = nodeId;
     Serial.printf("Assigned %s to Node ID %u\n", boardName.c_str(), nodeId);
     return boardName;
 }
 
-String getBoardNameFromNodeId(uint32_t nodeId) {
-    // Loop through the boardMapping to find the board name corresponding to nodeId.
-    for (auto const &entry : boardMapping) {
-        if (entry.second == nodeId) {
-            return entry.first;
-        }
-    }
-    // If not found, return the node ID as a string (or you can return an empty string or error)
-    return String(nodeId);
-}
+// String getBoardNameFromNodeId(uint32_t nodeId) {
+//     // Loop through the boardMapping to find the board name corresponding to nodeId.
+//     for (auto const &entry : boardMapping) {
+//         if (entry.second == nodeId) {
+//             return entry.first;
+//         }
+//     }
+//     // If not found, return the node ID as a string (or you can return an empty string or error)
+//     return String(nodeId);
+// }
 
 // Updates the map with the sensor data
 void updateSensorData(String boardName, std::map<String, String> data) {
@@ -261,7 +271,33 @@ void handleBasePage() {
 
 //Handles page 1
 void handleHTMLRoot() {
-    String htmlContent = readHTMLFile(webpage);
+    String begining = String(webpageBegining);
+    String middle = String(webpageMiddle);
+    String end = String(webpageEnd);
+    String combined = begining;
+
+    // Number of times to append 'middle'
+    int repeatCount = globalBoardCounter;
+
+    // Loop to append the middle string repeatedly
+    if (globalBoardCounter != 0) {
+        for (int i = 0; i < repeatCount; i++) {
+            String middleUpdate = middle;
+            middleUpdate.replace(String("!#!"), String(i + 1));
+            combined += middleUpdate;
+            if (i != globalBoardCounter) {
+                combined += String("<p>&nbsp;</p>");
+            }
+        }
+    } else {
+        combined += R"rawliteral(<h2 style="color: #2e6c80;">No Boards Yet:</h2>)rawliteral";
+    }
+
+    // Append the end string
+    combined += end;
+    
+
+    String htmlContent = readHTMLFile(combined.c_str());
     server.send(200, "text/html", htmlContent);
 }
 
@@ -416,7 +452,7 @@ void receivedCallback( uint32_t from, String &msg ) {
     }
 
     std::map<String, String> mini_map = jsonToMap(msg);
-    String boardName = getBoardNameFromNodeId(from);  // Get the proper board name
+    String boardName = getBoardName(from);  // Get the proper board name
     Serial.println("From: " + boardName);
     updateSensorData(boardName, mini_map);
 
@@ -430,7 +466,7 @@ void newConnectionCallback(uint32_t nodeId) {
     Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
 
     // Assign a new board number if not already present
-    String assignedBoard = assignBoardNumber(nodeId);
+    String assignedBoard = getBoardName(nodeId);
 
     // Initialize sensor data for the new board
     std::map<String, String> emptyData;
@@ -524,7 +560,7 @@ void loop() {
         mesh.update();
         delay(100);
         counter += 1;
-        if (counter == 50) {
+        if (counter == 25) {
             counter = 0;
             server.handleClient();
         }

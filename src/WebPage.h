@@ -1,4 +1,4 @@
-const char* webpage = R"rawliteral(
+const char* webpageBegining = R"rawliteral(
 
 <!DOCTYPE html>
 <html><head>
@@ -11,26 +11,25 @@ const char* webpage = R"rawliteral(
 <a href="/stop"><span style="background-color: #2b2301; color: #fff; display: inline-block; padding: 3px 10px; font-weight: bold; border-radius: 5px;">Stop Server</span></a></p>
 <h2 style="color: #2e6c80;">Boards:</h2>
 <p>{Paragraph space}</p>
-<h2 style="color: #2e6c80;">{Board 1}:</h2>
+
+)rawliteral";
+
+const char* webpageMiddle = R"rawliteral(
+
+<h2 style="color: #2e6c80;">{Board !#!}:</h2>
 <ol style="list-style: none; font-size: 14px; line-height: 32px; font-weight: bold;">
-<li style="clear: both;">Temperature = {Board 1 temperature} F</li>
-<li style="clear: both;">Humidity = {Board 1 humidity} %</li>
-<li style="clear: both;">Pressure = {Board 1 pressure} hPa</li>
-<li style="clear: both;">PM 1.0 = {Board 1 pm1_0} ppm</li>
-<li style="clear: both;">PM 2.5 = {Board 1 pm2_5} ppm</li>
-<li style="clear: both;">PM 10.0 = {Board 1 pm10} ppm</li>
+<li style="clear: both;">Temperature = {Board !#! temperature} F</li>
+<li style="clear: both;">Humidity = {Board !#! humidity} %</li>
+<li style="clear: both;">Pressure = {Board !#! pressure} hPa</li>
+<li style="clear: both;">PM 1.0 = {Board !#! pm1_0} ppm</li>
+<li style="clear: both;">PM 2.5 = {Board !#! pm2_5} ppm</li>
+<li style="clear: both;">PM 10.0 = {Board !#! pm10} ppm</li>
 </ol>
-<p>&nbsp;</p>
-<h2 style="color: #2e6c80;">{Board 2}:</h2>
-<ol style="list-style: none; font-size: 14px; line-height: 32px; font-weight: bold;">
-<li style="clear: both;">Temperature = {Board 2 temperature} F</li>
-<li style="clear: both;">Humidity = {Board 2 humidity} %</li>
-<li style="clear: both;">Pressure = {Board 2 pressure} hPa</li>
-<li style="clear: both;">PM 1.0 = {Board 2 pm1_0} ppm</li>
-<li style="clear: both;">PM 2.5 = {Board 2 pm2_5} ppm</li>
-<li style="clear: both;">PM 10.0 = {Board 2 pm10} ppm</li>
-</ol>
-<p>&nbsp;</p>
+
+)rawliteral";
+
+const char* webpageEnd = R"rawliteral(
+
 <h2 style="color: #2e6c80;">Chart View:</h2>
 <table style="height: 144px; width: 100%; border-collapse: collapse;" border="1">
 <tbody>

@@ -78,7 +78,7 @@ setInterval('autoRefresh()', 20000);
         <h2>{Board 2}</h2>
         <ol>
             <li>Temperature: {Board 2 temperature} F</li>
-            <li>Humidity: {Board 2 humidity} 5</li>
+            <li>Humidity: {Board 2 humidity} %</li>
             <li>Pressure: {Board 2 pressure} hPa</li>
             <li>PM 1.0: {Board 2 pm1_0} ppm</li>
             <li>PM 2.5: {Board 2 pm2_5} ppm</li>
@@ -100,7 +100,7 @@ setInterval('autoRefresh()', 20000);
         <h2>{Board 4}</h2>
         <ol>
             <li>Temperature: {Board 4 temperature} F</li>
-            <li>Humidity: {Board 4 humidity} 5</li>
+            <li>Humidity: {Board 4 humidity} %</li>
             <li>Pressure: {Board 4 pressure} hPa</li>
             <li>PM 1.0: {Board 4 pm1_0} ppm</li>
             <li>PM 2.5: {Board 4 pm2_5} ppm</li>
