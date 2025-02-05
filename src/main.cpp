@@ -48,6 +48,8 @@ int selfDestructTime = 5;
 
 // Simulated sensor data for demonstration
 std::map<String, std::vector<std::pair<String, String>>> sensorData;
+std::map<String, uint32_t> boardMapping; // Stores mappings of "Board #" to Node ID
+
 
 std::map<String, String> board1Data = {
     {"temperature", "0"},
@@ -165,6 +167,25 @@ void initializeFastLED() {
     updateMessages("FastLED Start", true);
 }
 
+String assignBoardNumber(uint32_t nodeId) {
+    int boardNum = boardMapping.size() + 1;
+    String boardName = "Board " + String(boardNum);
+    boardMapping[boardName] = nodeId;
+    Serial.printf("Assigned %s to Node ID %u\n", boardName.c_str(), nodeId);
+    return boardName;
+}
+
+String getBoardNameFromNodeId(uint32_t nodeId) {
+    // Loop through the boardMapping to find the board name corresponding to nodeId.
+    for (auto const &entry : boardMapping) {
+        if (entry.second == nodeId) {
+            return entry.first;
+        }
+    }
+    // If not found, return the node ID as a string (or you can return an empty string or error)
+    return String(nodeId);
+}
+
 // Updates the map with the sensor data
 void updateSensorData(String boardName, std::map<String, String> data) {
     std::vector<std::pair<String, String>> dataVector;
@@ -196,19 +217,38 @@ String readHTMLFile(const char* page) {
     //     }
     // }
 
-    for (auto& board : sensorData) {
-        String boardNamePlaceholder = "{" + board.first + "}";  // e.g., "{Board 1}"
-        html.replace(boardNamePlaceholder, board.first);        // Replace with the actual board name
-        // int i = 0;
-        for (auto& sensor : board.second) {
-            String sensorPlaceholder = "{" + board.first + " " + sensor.first + "}";  // e.g., "{Board 1 temperature}"
-            String replaceUnit = sensor.second;
-            // i += 1;
-            html.replace(sensorPlaceholder, replaceUnit);                           // Replace with the sensor value
+    // for (auto& board : sensorData) {
+    //     String boardNamePlaceholder = "{" + board.first + "}";  // e.g., "{Board 1}"
+    //     html.replace(boardNamePlaceholder, board.first);        // Replace with the actual board name
+    //     // int i = 0;
+    //     for (auto& sensor : board.second) {
+    //         String sensorPlaceholder = "{" + board.first + " " + sensor.first + "}";  // e.g., "{Board 1 temperature}"
+    //         String replaceUnit = sensor.second;
+    //         // i += 1;
+    //         html.replace(sensorPlaceholder, replaceUnit);                           // Replace with the sensor value
+    //     }
+    // }
+    //
+    // // Replace any remaining placeholders with a default value (e.g., "N/A")
+    // html.replace("{}", "N/A");
+    // return html;
+
+    // Replace {Board #} placeholders with the assigned numbers
+    for (const auto& board : boardMapping) {
+        String placeholder = "{" + board.first + "}";  // e.g., {Board 1}
+        html.replace(placeholder, board.first);
+    }
+
+    // Replace sensor placeholders for each assigned board
+    for (const auto& board : sensorData) {
+        String boardName = board.first; // e.g., "Board 1"
+        for (const auto& sensor : board.second) {
+            String sensorPlaceholder = "{" + boardName + " " + sensor.first + "}"; 
+            html.replace(sensorPlaceholder, sensor.second);
         }
     }
 
-    // Replace any remaining placeholders with a default value (e.g., "N/A")
+    // Replace any remaining placeholders with "N/A"
     html.replace("{}", "N/A");
     return html;
 }
@@ -376,8 +416,9 @@ void receivedCallback( uint32_t from, String &msg ) {
     }
 
     std::map<String, String> mini_map = jsonToMap(msg);
-    Serial.println("From: " + String(from));
-    updateSensorData(String(from), mini_map);
+    String boardName = getBoardNameFromNodeId(from);  // Get the proper board name
+    Serial.println("From: " + boardName);
+    updateSensorData(boardName, mini_map);
 
     if (boardType == "Both") {
         handleHTMLRoot;
@@ -387,6 +428,16 @@ void receivedCallback( uint32_t from, String &msg ) {
 
 void newConnectionCallback(uint32_t nodeId) {
     Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+
+    // Assign a new board number if not already present
+    String assignedBoard = assignBoardNumber(nodeId);
+
+    // Initialize sensor data for the new board
+    std::map<String, String> emptyData;
+    for (const auto& key : keys) {
+        emptyData[key] = "N/A";  // Default values
+    }
+    updateSensorData(assignedBoard, emptyData);
 }
 
 void changedConnectionCallback() {
@@ -437,10 +488,10 @@ void setup() {
 
     serialDelay(5);
 
-    updateSensorData(String("1129945228"), board1Data);
-    updateSensorData(String("1129948912"), board2Data);
-    updateSensorData(String("Board 1"), board1Data);
-    updateSensorData(String("Board 2"), board2Data);
+    // updateSensorData(String("1129945228"), board1Data);
+    // updateSensorData(String("1129948912"), board2Data);
+    // updateSensorData(String("Board 1"), board1Data);
+    // updateSensorData(String("Board 2"), board2Data);
 
     if (boardType == "WebServer") {
         connectAP();
