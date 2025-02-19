@@ -19,6 +19,23 @@ extern const char* webpageEnd;
 const char* webpage;
 extern const char* webpage2;
 
+#define PMS_RX 19
+#define PMS_TX 20
+
+HardwareSerial pmsSerial(2);
+
+// variables for PMS7003
+uint16_t pm1_0, pm2_5, pm10_0;
+
+// Variables for averaging
+const int numReadings = 15; // Number of readings to average (15 seconds worth)
+int readingsPM1_0[numReadings];  // Array to store PM1.0 readings
+int readingsPM2_5[numReadings];  // Array to store PM2.5 readings
+int readingsPM10_0[numReadings]; // Array to store PM10 readings
+
+int readIndex = 0;               // Current reading index
+unsigned long lastReadTime = 0;   // To keep track of the time for taking readings
+
 // Constants for OLED and LEDs
 #define OLED_CLOCK      18
 #define OLED_DATA       17
@@ -54,7 +71,7 @@ std::map<String, std::vector<std::pair<String, String>>> sensorData;
 std::map<String, uint32_t> boardMapping; // Stores mappings of "Board #" to Node ID
 unsigned int globalBoardCounter = 0;
 
-std::map<String, String> board1Data = {
+std::map<String, String> exampleBoardData = {
     {"temperature", "0"},
     {"humidity", "1"},
     {"pressure", "2"},
@@ -63,18 +80,9 @@ std::map<String, String> board1Data = {
     {"pm10", "5"}
 };
 
-std::map<String, String> board2Data = {
-    {"temperature", "6"},
-    {"humidity", "7"},
-    {"pressure", "8"},
-    {"pm1_0", "9"},
-    {"pm2_5", "10"},
-    {"pm10", "11"}
-};
-
 // Keys, data, and suffix arrays for sensor values
 String keys[6] = {"temperature", "humidity", "pressure", "pm1_0", "pm2_5", "pm10"};    // Keys for data
-int datum[6] = {1, 2, 3, 4, 5, 6};    // pm1.0, pm2.5, pm10.0, temp, hum, psi (placeholder values)
+float datum[6] = {1, 2, 3, 4, 5, 6};    // pm1.0, pm2.5, pm10.0, temp, hum, psi (placeholder values)
 String suf[6] = {"F", "%", "hPa", "ppm", "ppm", "ppm"};    // Suffixes for readings
 JsonDocument jsonReadings;
 String readings;    //String to send to other nodes with sensor readings
@@ -97,9 +105,9 @@ const char * num[100] = {
 float temperature = 0.0;
 float humidity = 0.0;
 float pressure = 0.0;
-float pm1_0 = 0.0;
-float pm2_5 = 0.0;
-float pm10 = 0.0;
+float pm1_0float = 0.0;
+float pm2_5float = 0.0;
+float pm10_0float = 0.0;
 int counter = 0;
 
 // Mesh network settings
@@ -396,11 +404,17 @@ std::map<String, String> jsonToMap(String jsonString) {
     return dataMap;
 }
 
-String readingsToJSON () {
+String readingsToJSON(float sensTemp, float sensHum, float sensPress, float senspm1, float senspm2_5, float senspm10) {
+    datum[1] = sensTemp;
+    datum[2] = sensHum;
+    datum[3] = sensPress;
+    datum[4] = senspm1;
+    datum[5] = senspm2_5;
+    datum[6] = senspm10;
     for (int i = 0; i < 6; i++) {
-        int randomNum = rand() % 101;
-        Serial.println(randomNum);
-        datum[i] = randomNum;
+        // int randomNum = rand() % 101;
+        // Serial.println(randomNum);
+        // datum[i] = randomNum;
         jsonReadings[keys[i]] = String(datum[i]);   // + " " + suf[i]
     }
     
@@ -410,7 +424,7 @@ String readingsToJSON () {
 
 void sendMessage () {
     updateMessages("sent", true);
-    String msg = readingsToJSON();
+    String msg = readingsToJSON(temperature, humidity, pressure, pm1_0float, pm2_5float, pm10_0float);
     mesh.sendBroadcast(msg);
 }
 
@@ -513,6 +527,91 @@ void disconnectFromMesh() {
     mesh.stop();
 }
 
+void initializePMS() {
+    // Initialize PMS7003 Serial on pins 21 (RX) and 22 (TX)
+    pmsSerial.begin(9600, SERIAL_8N1, PMS_RX, PMS_TX);
+    
+    // Initialize the readings arrays to zero
+    for (int i = 0; i < numReadings; i++) {
+    readingsPM1_0[i] = 0;
+    readingsPM2_5[i] = 0;
+    readingsPM10_0[i] = 0;
+  }
+}
+
+// Function to read data from PMS7003
+bool readPMSData() {
+  if (pmsSerial.available() >= 32) {
+    uint8_t buffer[32];
+    pmsSerial.readBytes(buffer, 32);
+
+    // Check if the frame header is correct
+    if (buffer[0] == 0x42 && buffer[1] == 0x4D) {
+      pm1_0 = (buffer[10] << 8) | buffer[11];
+      pm2_5 = (buffer[12] << 8) | buffer[13];
+      pm10_0 = (buffer[14] << 8) | buffer[15];
+      return true;
+    }
+  }
+  return false;
+}
+
+// Function to calculate the average of an array
+float calculateAverage(int readings[], int numReadings) {
+  int sum = 0;
+  for (int i = 0; i < numReadings; i++) {
+    sum += readings[i];
+  }
+  return (float)sum / numReadings;
+}
+
+void PMSread() {
+    // Check if it's time to take a new reading (every 1 second)
+  if (millis() - lastReadTime >= 1000) {
+    lastReadTime = millis(); // Update the last read time
+    
+    // Read data from the PMS7003
+    if (readPMSData()) {
+      // Store the readings
+      readingsPM1_0[readIndex] = pm1_0;
+      readingsPM2_5[readIndex] = pm2_5;
+      readingsPM10_0[readIndex] = pm10_0;
+
+      // Print current readings for debugging
+      Serial.print("Reading PM1.0: "); Serial.println(pm1_0);
+      Serial.print("Reading PM2.5: "); Serial.println(pm2_5);
+      Serial.print("Reading PM10: "); Serial.println(pm10_0);
+
+      // Move to the next position in the array
+      readIndex++;
+
+      // If we've reached the number of readings we want to average, calculate the average and send data to ThingSpeak
+      if (readIndex >= numReadings) {
+        // Calculate the averages
+        float avgPM1_0 = calculateAverage(readingsPM1_0, numReadings);
+        float avgPM2_5 = calculateAverage(readingsPM2_5, numReadings);
+        float avgPM10_0 = calculateAverage(readingsPM10_0, numReadings);
+        
+        // Print the averages for debugging
+        Serial.println("Averages:");
+        Serial.print("Average PM1.0: "); Serial.println(avgPM1_0);
+        Serial.print("Average PM2.5: "); Serial.println(avgPM2_5);
+        Serial.print("Average PM10: "); Serial.println(avgPM10_0);
+        
+        // Send the averaged data to ThingSpeak
+        // sendDataToThingSpeak(avgPM1_0, avgPM2_5, avgPM10_0);
+        pm1_0float = float(pm1_0);
+        pm2_5float = float(pm2_5);
+        pm10_0float = float(pm10_0);
+
+
+        // Reset the readIndex for the next batch of readings
+        readIndex = 0;
+      }
+    }
+  }
+}
+
 void setup() {
     delay(2500);
     Serial.begin(115200);
@@ -536,6 +635,7 @@ void setup() {
     } else if (boardType == "Mesh") {
         initializeMesh();
         startTasks();
+        initializePMS();
     } else if (boardType == "Both") {
         counter = 0;
         initializeMesh();
@@ -555,6 +655,7 @@ void loop() {
         delay(5000);
     } else if (boardType == "Mesh") {
         mesh.update();
+        PMSread();
         delay(100);
     } else if (boardType == "Both") {
         mesh.update();
